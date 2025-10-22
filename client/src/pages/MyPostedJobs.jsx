@@ -1,13 +1,77 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AuthContext } from '../providers/AuthProvider'
+import axios from 'axios'
+import { format } from 'date-fns'
+import { toast } from 'react-hot-toast'
 
 const MyPostedJobs = () => {
+  const { user } = useContext(AuthContext)
+  const [jobs, setJobs] = useState([])
+  useEffect(() => {
+    fetchAllJobs()
+  }, [user])
+  const fetchAllJobs = async () => {
+    const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/jobs/${user?.email}`)
+    setJobs(data)
+
+  }
+
+  // handle delete 
+  const handleDelete = (id) => {
+    try {
+      axios.delete(`${import.meta.env.VITE_API_URL}/job/${id}`)
+      toast.success('Data Deleted succesfully!!!')
+      setJobs(prevJobs => prevJobs.filter(job => job._id !== id));
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  // here modern delete haha
+
+  const modernDelete = (id) => {
+
+    toast(
+      (t) => (
+        <div className='flex gap-3 justify-center items-center'>
+          <div>
+            <p>Are you <b className='text-red-600'>sure?</b></p>
+          </div>
+          <div className='flex items-center justify-center gap-3'>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id)
+                handleDelete(id)
+                toast.dismiss(t.id)
+              }}
+              className='px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 transition duration-200'
+            >
+              Yes, Delete
+            </button>
+
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition duration-200'
+            >
+              Cancel
+            </button>
+          </div>
+
+
+        </div>
+      )
+    );
+  }
+  console.log(jobs)
   return (
     <section className='container px-4 mx-auto pt-12'>
       <div className='flex items-center gap-x-3'>
         <h2 className='text-lg font-medium text-gray-800 '>My Posted Jobs</h2>
 
         <span className='px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full '>
-          4 Job
+          {jobs.length} Job
         </span>
       </div>
 
@@ -62,33 +126,39 @@ const MyPostedJobs = () => {
                   </tr>
                 </thead>
                 <tbody className='bg-white divide-y divide-gray-200 '>
-                  <tr>
+                  {jobs.map(job => <tr key={job._id}>
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      E-commerce Website Development
+                      {job.title}
                     </td>
 
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      28/05/2024
+                      {format(new Date(job.deadline), 'P')}
                     </td>
 
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      $500-$600
+                      ${job.min_price}-${job.max_price}
                     </td>
                     <td className='px-4 py-4 text-sm whitespace-nowrap'>
                       <div className='flex items-center gap-x-2'>
                         <p
-                          className={`px-3 py-1  text-blue-500 bg-blue-100/60 text-xs  rounded-full`}
+                          className={`px-3 py-1  
+                            
+                            ${job.category === 'Web Development' &&'text-blue-500 bg-blue-100/60 ' }
+                            ${job.category === 'Graphics Design' &&'text-green-500 bg-green-100/60 ' }
+                            ${job.category === 'Digital Marketing' &&'text-red-500 bg-red-100/60 ' }
+                        
+                          text-xs  rounded-full`}
                         >
-                          Web Development
+                          {job.category}
                         </p>
                       </div>
                     </td>
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      Dramatically redefine bleeding-edge...
+                      {job.description.substring(0, 70)}...
                     </td>
                     <td className='px-4 py-4 text-sm whitespace-nowrap'>
                       <div className='flex items-center gap-x-6'>
-                        <button className='text-gray-500 transition-colors duration-200   hover:text-red-500 focus:outline-none'>
+                        <button onClick={() => modernDelete(job._id)} className='text-gray-500 transition-colors duration-200   hover:text-red-500 focus:outline-none'>
                           <svg
                             xmlns='http://www.w3.org/2000/svg'
                             fill='none'
@@ -106,7 +176,7 @@ const MyPostedJobs = () => {
                         </button>
 
                         <Link
-                          to={`/update/1`}
+                          to={`/update/${job._id}`}
                           className='text-gray-500 transition-colors duration-200   hover:text-yellow-500 focus:outline-none'
                         >
                           <svg
@@ -126,7 +196,7 @@ const MyPostedJobs = () => {
                         </Link>
                       </div>
                     </td>
-                  </tr>
+                  </tr>)}
                 </tbody>
               </table>
             </div>
