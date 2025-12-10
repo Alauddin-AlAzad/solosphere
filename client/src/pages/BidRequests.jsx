@@ -1,11 +1,44 @@
+import { useContext, useEffect, useState } from "react"
+import { AuthContext } from "../providers/AuthProvider"
+import axios from "axios"
+import { format } from "date-fns"
+import {toast} from 'react-hot-toast'
+
 const BidRequests = () => {
+  const { user } = useContext(AuthContext)
+  const [bidData, setBidData] = useState([])
+  useEffect(() => {
+    fetchBidData()
+
+  }, [user])
+
+  const fetchBidData = async () => {
+    const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/bid-request/${user?.email}`)
+    setBidData(data)
+    fetchBidData();
+  }
+  console.log(bidData)
+  const handleStatusChange = async (id, prevStatus, cuStatus) => {
+    // console.table({ id, prevStatus, cuStatus });
+    if (prevStatus === cuStatus || prevStatus === 'Completed')
+      return console.log('Not permitted')
+    console.table(cuStatus);
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_URL}/bid-status-update/${id}`, { cuStatus })
+      fetchBidData();
+      toast.success(`Status Changes to ${cuStatus}`)
+    } catch (err) {
+      console.log(err)
+      toast.error(`Unable to change`)
+    }
+  }
   return (
     <section className='container px-4 mx-auto my-12'>
       <div className='flex items-center gap-x-3'>
         <h2 className='text-lg font-medium text-gray-800 '>Bid Requests</h2>
 
         <span className='px-3 py-1 text-xs text-blue-600 bg-blue-100 rounded-full '>
-          4 Requests
+          {bidData.length} Requests
         </span>
       </div>
 
@@ -69,37 +102,52 @@ const BidRequests = () => {
                   </tr>
                 </thead>
                 <tbody className='bg-white divide-y divide-gray-200 '>
-                  <tr>
+                  {bidData.map(bid => <tr key={bid._id}>
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      E-commerce Website Development
+                      {bid.title}
                     </td>
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      instructors@programming-hero.com
-                    </td>
-
-                    <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      28/05/2024
+                      {bid?.email}
                     </td>
 
                     <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
-                      $500
+                      {format(new Date(bid?.deadline2), 'P')}
+                    </td>
+
+                    <td className='px-4 py-4 text-sm text-gray-500  whitespace-nowrap'>
+                      ${bid.price}
                     </td>
                     <td className='px-4 py-4 text-sm whitespace-nowrap'>
                       <div className='flex items-center gap-x-2'>
                         <p className='px-3 py-1 rounded-full text-blue-500 bg-blue-100/60 text-xs'>
-                          Web Development
+                          {bid.category}
                         </p>
                       </div>
                     </td>
-                    <td className='px-4 py-4 text-sm font-medium text-gray-700 whitespace-nowrap'>
-                      <div className='inline-flex items-center px-3 py-1 rounded-full gap-x-2 bg-yellow-100/60 text-yellow-500'>
-                        <span className='h-1.5 w-1.5 rounded-full bg-green-500'></span>
-                        <h2 className='text-sm font-normal '>Complete</h2>
+                    <td className={`px-4 py-4 text-sm font-medium text-gray-700 whitespace-nowrap`}>
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full gap-x-2 
+                        
+                        ${bid.status === 'pending' && 'bg-yellow-100/60 text-yellow-500'}
+                               ${bid.status === 'In Progress' && 'bg-blue-100/60 text-yblue-500'} 
+                                ${bid.status === 'Completed' && 'bg-green-100/60 text-green-500'} 
+                                 ${bid.status === 'Rejected' && 'bg-red-100/60 text-red-500'} `}>
+                        <span className={`h-1.5 w-1.5 rounded-full
+                        
+                        
+                        ${bid.status === 'pending' && 'bg-yellow-500'}
+                               ${bid.status === 'In Progress' && 'bg-blue-500'} 
+                                ${bid.status === 'Completed' && 'bg-green-500'} 
+                                 ${bid.status === 'Rejected' && 'bg-red-500'} `}></span>
+                        <h2 className='text-sm font-normal '>{bid.status}</h2>
                       </div>
                     </td>
                     <td className='px-4 py-4 text-sm whitespace-nowrap'>
                       <div className='flex items-center gap-x-6'>
-                        <button className='disabled:cursor-not-allowed text-gray-500 transition-colors duration-200   hover:text-red-500 focus:outline-none'>
+                        {/* accept button status change */}
+                        <button
+                          onClick={() => handleStatusChange(bid._id, bid.status, "In Progress")}
+                          disabled={bid.status !== 'pending'}
+                          className='disabled:cursor-not-allowed text-gray-500 transition-colors duration-200   hover:text-red-500 focus:outline-none'>
                           <svg
                             xmlns='http://www.w3.org/2000/svg'
                             fill='none'
@@ -115,8 +163,11 @@ const BidRequests = () => {
                             />
                           </svg>
                         </button>
-
-                        <button className='disabled:cursor-not-allowed text-gray-500 transition-colors duration-200   hover:text-yellow-500 focus:outline-none'>
+                        {/* reject button status change */}
+                        <button
+                          onClick={() => handleStatusChange(bid._id, bid.status, "Rejected")}
+                          disabled={bid.status !== 'pending'}
+                          className='disabled:cursor-not-allowed text-gray-500 transition-colors duration-200   hover:text-yellow-500 focus:outline-none'>
                           <svg
                             xmlns='http://www.w3.org/2000/svg'
                             fill='none'
@@ -134,7 +185,7 @@ const BidRequests = () => {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </tr>)}
                 </tbody>
               </table>
             </div>

@@ -45,7 +45,7 @@ const AddJob = () => {
         form.reset();
         toast.success('Job Added Succesfully !!!')
         
-        navigate('/my-posted-jobs')
+        // navigate('/my-posted-jobs')
     } catch (err) {
       toast.error(err.message)
     }

@@ -3,7 +3,7 @@
 import { Link } from 'react-router-dom'
 import {format} from 'date-fns'
 const JobCard = ({job}) => {
-  const {title,deadline,category,min_price,max_price,description,_id}=job || {}
+  const {title,deadline,category,min_price,max_price,description,_id,bid_count}=job || {}
   return (
     <Link
       to={`/job/${_id}`}
@@ -13,7 +13,12 @@ const JobCard = ({job}) => {
         <span className='text-xs font-light text-gray-800 '>
           Deadline: {format(new Date(deadline),'P')}
         </span>
-        <span className='px-3 py-1 text-[8px] text-blue-800 uppercase bg-blue-200 rounded-full '>
+        <span className={`px-3 py-1  
+                            
+                            ${category === 'Web Development' &&'text-blue-500 bg-blue-100/60 ' }
+                            ${category === 'Graphics Design' &&'text-green-500 bg-green-100/60 ' }
+                            ${category === 'Digital Marketing' &&'text-red-500 bg-red-100/60 ' }
+              `}>
         {category}
         </span>
       </div>
@@ -29,7 +34,7 @@ const JobCard = ({job}) => {
         <p className='mt-2 text-sm font-bold text-gray-600 '>
           Range: ${min_price} - ${max_price}
         </p>
-        <p className='mt-2 text-sm font-bold text-gray-600 '>Total Bids: 0</p>
+        <p className='mt-2 text-sm font-bold text-gray-600 '>Total Bids: {bid_count}</p>
       </div>
     </Link>
   )
