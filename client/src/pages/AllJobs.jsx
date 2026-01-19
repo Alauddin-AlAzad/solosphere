@@ -7,15 +7,23 @@ const AllJobs = () => {
   const [jobs, setJobs] = useState([])
   const [filter, setFilter]=useState('')
   const [search, setSearch]=useState('')
+  const [sort, setSort]=useState('')
   
   useEffect(() => {
     const fetchAllJobs = async () => {
-      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/all-jobs?filter=${filter}&search=${search}`)
+      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/all-jobs?filter=${filter}&search=${search}&sort=${sort}`)
       setJobs(data)
 
     }
     fetchAllJobs()
-  }, [filter,search])
+  }, [filter,search,sort])
+
+  const handleReset=()=>{
+    setFilter('')
+    setSearch('')
+    setSort ('')
+
+  }
 
   console.log(jobs)
   return (
@@ -27,6 +35,7 @@ const AllJobs = () => {
               name='category'
               id='category'
               onChange={(e)=>setFilter(e.target.value)}
+              value={filter}
               className='border p-4 rounded-lg'
             >
               <option value=''>Filter By Category</option>
@@ -58,14 +67,16 @@ const AllJobs = () => {
             <select
               name='category'
               id='category'
+              onChange={(e)=>setSort(e.target.value)}
+              value={''}
               className='border p-4 rounded-md'
             >
               <option value=''>Sort By Deadline</option>
-              <option value='dsc'>Descending Order</option>
+              <option value='desc'>Descending Order</option>
               <option value='asc'>Ascending Order</option>
             </select>
           </div>
-          <button className='btn'>Reset</button>
+          <button onClick={handleReset} className='btn'>Reset</button>
         </div>
         <div className='grid grid-cols-1 gap-8 mt-8 xl:mt-16 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
           {jobs.map(job =>

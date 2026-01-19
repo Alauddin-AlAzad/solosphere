@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
 
 const port = process.env.PORT || 9000
 const app = express()
@@ -25,9 +26,20 @@ async function run() {
     const jobCOllection = db.collection('jobs')
     const bidCollection = db.collection('bids')
 
+    // generate json web token
+    app.post('/jwt', async (req, res) => {
+      // create token
+      const token = jwt.sign(email, process.env.SECRET_KEY, { expiresIn: '365d' })
+      console.log(token)
+      res.send(token)
+    })
+
     // save job data in db
     app.post('/add-job', async (req, res) => {
       const jobData = req.body;
+      if (jobData.deadline) {
+        jobData.deadline = new Date(jobData.deadline); // 🔥 MUST
+      }
       const result = await jobCOllection.insertOne(jobData)
       res.send(result)
     })
@@ -68,6 +80,9 @@ async function run() {
     app.put('/update-job/:id', async (req, res) => {
       const id = req.params.id
       const jobData = req.body
+      if (jobData.deadline) {
+        jobData.deadline = new Date(jobData.deadline) // 🔥
+      }
       const updated = {
         $set: jobData
       }
@@ -84,8 +99,8 @@ async function run() {
       const alreadyExist = await bidCollection.findOne(query)
       console.log(alreadyExist)
       if (alreadyExist) return res
-      .status(400)
-      .send('You Already bid this job')
+        .status(400)
+        .send('You Already bid this job')
       // add-bid
 
       const result = await bidCollection.insertOne(bidData)
@@ -102,53 +117,60 @@ async function run() {
     // display bids data of a specific user
 
     app.get('/bids/:email', async (req, res) => {
-      
+
       const email = req.params.email
-      const query={email}
-      const result= await bidCollection.find(query).toArray()
+      const query = { email }
+      const result = await bidCollection.find(query).toArray()
       res.send(result)
     })
     // get all bid request for a specific user 
 
     app.get('/bid-request/:email', async (req, res) => {
       const email = req.params.email
-      const query={buyer : email}
-      const result= await bidCollection.find(query).toArray()
+      const query = { buyer: email }
+      const result = await bidCollection.find(query).toArray()
       res.send(result)
     })
 
     // here update the ststus
-    app.patch('/bid-status-update/:id', async (req,res)=>{
-      const id=req.params.id
-      const {cuStatus}=req.body
-     
-        // console.log(cuStatus)
-        const filter={_id : new ObjectId(id)}
-        const updated={
-          $set: {status : cuStatus}
-        }
-        const result= await bidCollection.updateOne(filter,updated)
-        res.send(result)
+    app.patch('/bid-status-update/:id', async (req, res) => {
+      const id = req.params.id
+      const { cuStatus } = req.body
+
+      // console.log(cuStatus)
+      const filter = { _id: new ObjectId(id) }
+      const updated = {
+        $set: { status: cuStatus }
+      }
+      const result = await bidCollection.updateOne(filter, updated)
+      res.send(result)
     })
 
     // here work for search implemetn
 
-  app.get('/all-jobs', async (req,res)=>{
-    const filter=req.query.filter
-    const search=req.query.search
-  
-    let query={
-      title:{
-        $regex: search,
-        $options: 'i'
-      },
-    }
-    if(filter){
-      query.category= filter
-    }
-    const result= await jobCOllection.find(query).toArray()
-    res.send(result)
-  })
+    app.get('/all-jobs', async (req, res) => {
+      const { filter, search, sort } = req.query
+
+      let query = {}
+
+      if (search) {
+        query.title = { $regex: search, $options: 'i' }
+      }
+
+      if (filter) {
+        query.category = filter
+      }
+
+      let options = {}
+      if (sort === 'asc') options.sort = { deadline: 1 }
+      if (sort === 'desc') options.sort = { deadline: -1 }
+
+      console.log('SORT:', sort, 'OPTIONS:', options)
+
+      const result = await jobCOllection.find(query, options).toArray()
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
     console.log(
