@@ -2,20 +2,24 @@ import { useContext, useEffect, useState } from "react"
 import { AuthContext } from "../providers/AuthProvider"
 import axios from "axios"
 import { format } from "date-fns"
-import {toast} from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
+import useAxiousSecure from "../hooks/useAxiousSecure"
 
 const BidRequests = () => {
   const { user } = useContext(AuthContext)
+  const axiosSecure = useAxiousSecure();
   const [bidData, setBidData] = useState([])
   useEffect(() => {
-    fetchBidData()
+    if (user?.email) {
+      fetchBidData()
+    }
+  }, [user?.email])
 
-  }, [user])
 
   const fetchBidData = async () => {
-    const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/bid-request/${user?.email}`)
+    const { data } = await axiosSecure.get(`/bid-request/${user?.email}`)
     setBidData(data)
-    fetchBidData();
+
   }
   console.log(bidData)
   const handleStatusChange = async (id, prevStatus, cuStatus) => {
@@ -24,7 +28,7 @@ const BidRequests = () => {
       return console.log('Not permitted')
     console.table(cuStatus);
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL}/bid-status-update/${id}`, { cuStatus })
+      await axiosSecure.patch(`/bid-status-update/${id}`, { cuStatus })
       fetchBidData();
       toast.success(`Status Changes to ${cuStatus}`)
     } catch (err) {

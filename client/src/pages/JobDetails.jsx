@@ -7,10 +7,11 @@ import { toast } from 'react-hot-toast'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import { useNavigate, useParams } from 'react-router-dom'
-import AuthProvider, { AuthContext } from '../providers/AuthProvider'
-
+import  { AuthContext } from '../providers/AuthProvider'
+import useAxiousSecure from '../hooks/useAxiousSecure'
 const JobDetails = () => {
   const navigate = useNavigate();
+  const axiosSecure=useAxiousSecure()
   const { id } = useParams()
   const { user } = useContext(AuthContext)
   const [startDate, setStartDate] = useState(new Date())
@@ -21,7 +22,7 @@ const JobDetails = () => {
     fetchAllJobs()
   }, [])
   const fetchAllJobs = async () => {
-    const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/job/${id}`)
+    const { data } = await axiosSecure.get(`/job/${id}`)
     setJob(data)
     // setStartDate(new Date(data.deadline))
   }

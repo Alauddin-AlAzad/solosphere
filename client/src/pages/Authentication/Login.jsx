@@ -15,12 +15,8 @@ const Login = () => {
   // Google Signin
   const handleGoogleSignIn = async () => {
     try {
-      const result = await signInWithGoogle()
-      //token genaretes
-      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/jwt`,
-        { email: result?.user?.email })
-      console.log('API URL:', import.meta.env.VITE_API_URL)
-
+      await signInWithGoogle()
+      
       toast.success('Signin Successful')
       navigate(from, { replace: true })
     } catch (err) {
